@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orçamento de Impressão 3D — PA Engineering</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#ffffff;
+    --panel:#ffffff;
+    --panel-2:#f4f6f9;
+    --border:#e1e5eb;
+    --border-soft:#eceff3;
+    --text:#14171c;
+    --text-dim:#6b7580;
+    --text-faint:#9aa3ad;
+    --accent:#0077cc;
+    --accent-light:#0091f7;
+    --accent-soft:#0077cc12;
+    --radius:14px;
+    --shadow:0 1px 3px rgba(20,23,28,.05), 0 1px 2px rgba(20,23,28,.04);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding:22px 16px 32px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  h1{font-size:19px;font-weight:700;margin:0 0 4px;text-align:center;letter-spacing:-0.01em;}
+  .sub{font-size:13px;color:var(--text-dim);text-align:center;margin:0 0 22px;}
+
+  .dropzone{
+    border:1.5px dashed var(--border);border-radius:var(--radius);
+    padding:30px 18px;text-align:center;background:var(--panel-2);
+    cursor:pointer;transition:border-color .15s, background .15s;margin-bottom:16px;
+  }
+  .dropzone.drag{border-color:var(--accent);background:var(--accent-soft);}
+  .dropzone.has-file{padding:14px 18px;background:var(--panel);border-style:solid;box-shadow:var(--shadow);}
+  .dz-icon{
+    width:42px;height:42px;border-radius:11px;margin:0 auto 10px;
+    background:var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);
+  }
+  .dz-text b{font-size:14.5px;display:block;}
+  .dz-text span{display:block;color:var(--text-dim);font-size:12px;margin-top:4px;}
+  .dz-file-row{display:flex;align-items:center;gap:12px;}
+  .dz-file-meta{font-size:11.5px;color:var(--text-dim);}
+  .btn-ghost{
+    border:1px solid var(--border);background:transparent;color:var(--text-dim);
+    padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;
+    transition:all .15s;flex-shrink:0;
+  }
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+
+  #viewerCard{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);
+    padding:14px;margin-bottom:16px;display:none;box-shadow:var(--shadow);
+  }
+  #viewer{
+    width:100%;height:260px;border-radius:10px;
+    background:radial-gradient(circle at 50% 30%, #eef4fb, #e4ebf3);
+    position:relative;overflow:hidden;cursor:grab;
+  }
+  #viewer:active{cursor:grabbing;}
+  #viewer canvas{display:block;}
+  .viewer-hint{position:absolute;bottom:8px;right:10px;font-size:10px;color:var(--text-faint);}
+
+  .card{
+    background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);
+    padding:18px;margin-bottom:16px;box-shadow:var(--shadow);
+  }
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:8px;}
+  select{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    padding:11px 12px;border-radius:9px;font-size:14px;font-family:'Space Grotesk',sans-serif;
+    outline:none;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7580'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:32px;
+  }
+  select:focus{border-color:var(--accent);}
+
+  .placeholder{
+    text-align:center;color:var(--text-faint);font-size:13px;padding:18px 10px;
+  }
+
+  .result{
+    background:linear-gradient(160deg, #eaf4fc 0%, #ffffff 65%);
+    border:1px solid #d6e9f9;border-radius:var(--radius);
+    padding:26px 22px;text-align:center;display:none;box-shadow:var(--shadow);
+  }
+  .result .label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+  .result .price{
+    font-size:42px;font-weight:700;color:var(--text);margin:8px 0 18px;letter-spacing:-0.01em;
+  }
+  .result .price small{font-size:20px;color:var(--accent);font-weight:600;}
+  .cta{
+    display:inline-block;background:var(--accent);color:#fff;border:none;
+    padding:13px 28px;border-radius:100px;font-size:14.5px;font-weight:600;
+    cursor:pointer;font-family:inherit;text-decoration:none;
+    transition:background .15s, transform .12s;
+  }
+  .cta:hover{background:var(--accent-light);transform:translateY(-1px);}
+  .result .note{margin-top:14px;font-size:11px;color:var(--text-faint);}
+
+  .loading-spin{
+    display:inline-block;width:14px;height:14px;border-radius:50%;
+    border:2px solid var(--border);border-top-color:var(--accent);
+    animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Calculadora de Orçamento</h1>
+  <p class="sub">Carrega o teu modelo 3D e recebe uma estimativa de preço imediata</p>
+
+  <div class="dropzone" id="dropzone">
+    <div class="dropzone-inner" id="dropzoneInner">
+      <div class="dz-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="dz-text">
+        <b>Arrasta o teu ficheiro .stl para aqui</b>
+        <span>ou clica para escolher — processado no teu browser</span>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept=".stl" style="display:none">
+  </div>
+
+  <div id="viewerCard">
+    <div id="viewer">
+      <div class="viewer-hint">arrasta para rodar</div>
+    </div>
+  </div>
+
+  <div class="card" id="materialCard" style="display:none">
+    <div class="field">
+      <label>Material</label>
+      <select id="material"></select>
+    </div>
+  </div>
+
+  <p class="placeholder" id="placeholder">Assim que carregares o ficheiro, calculamos o preço automaticamente.</p>
+
+  <div class="result" id="result">
+    <div class="label">Preço estimado</div>
+    <div class="price"><small>€</small><span id="finalPrice">0.00</span></div>
+    <a class="cta" id="ctaBtn" href="#">Solicitar Orçamento</a>
+    <div class="note">Valor estimado. O preço final é confirmado após análise do ficheiro.</div>
+  </div>
+
+</div>
+
+<script>
+/* ======================= CONFIGURAÇÃO (materiais + custos fixos) ======================= */
+// Predefinições de reserva — usadas apenas se não for possível carregar config-cliente-pa3d.json
+let MATERIALS = {
+  PLA:   { density: 1.24, cost: 18, flow: 15, label: 'PLA' },
+  PETG:  { density: 1.27, cost: 22, flow: 10, label: 'PETG' },
+  ABS:   { density: 1.04, cost: 19, flow: 12, label: 'ABS' },
+  ASA:   { density: 1.05, cost: 24, flow: 11, label: 'ASA' },
+  TPU:   { density: 1.21, cost: 28, flow: 5,  label: 'TPU (flexível)' },
+  NYLON: { density: 1.14, cost: 35, flow: 9,  label: 'Nylon' },
+};
+
+let CONFIG = {
+  printerPrice: 300, printerLifetime: 8000, consumablesPerHour: 0.08,
+  laborRate: 10, prepMinutes: 15, postMinutes: 10,
+  packaging: 2, shipping: 5, power: 150, electricity: 0.25, margin: 30
+};
+
+// Parâmetros de fatiamento fixos, para a estimativa geométrica de peso e tempo
+const DEFAULT_WALLS = 2;
+const DEFAULT_NOZZLE = 0.4;
+const DEFAULT_LAYER_HEIGHT = 0.2;
+const DEFAULT_TOP_BOTTOM_LAYERS = 4;
+const DEFAULT_INFILL = 0.15;
+
+async function loadConfig(){
+  try {
+    const resp = await fetch('./config-cliente-pa3d.json', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.materiais && Object.keys(data.materiais).length){
+      const mats = {};
+      for (const [key, m] of Object.entries(data.materiais)){
+        mats[key] = { density: m.densidade, cost: m.custo_kg, flow: m.caudal, label: m.nome || key };
+      }
+      MATERIALS = mats;
+    }
+    if (data.custos_fixos){
+      const c = data.custos_fixos;
+      CONFIG = {
+        printerPrice: c.preco_impressora ?? CONFIG.printerPrice,
+        printerLifetime: c.vida_util_horas ?? CONFIG.printerLifetime,
+        consumablesPerHour: c.consumiveis_hora ?? CONFIG.consumablesPerHour,
+        laborRate: c.custo_operador_hora ?? CONFIG.laborRate,
+        prepMinutes: c.preparacao_min ?? CONFIG.prepMinutes,
+        postMinutes: c.pos_processamento_min ?? CONFIG.postMinutes,
+        packaging: c.embalagem ?? CONFIG.packaging,
+        shipping: c.envio ?? CONFIG.shipping,
+        power: c.potencia_impressora_w ?? CONFIG.power,
+        electricity: c.eletricidade_kwh ?? CONFIG.electricity,
+        margin: c.margem_lucro ?? CONFIG.margin,
+      };
+    }
+  } catch(err){
+    console.warn('Não foi possível carregar config-cliente-pa3d.json — a usar predefinições.', err);
+  }
+  populateMaterialSelect();
+}
+
+function populateMaterialSelect(){
+  const sel = document.getElementById('material');
+  sel.innerHTML = '';
+  Object.entries(MATERIALS).forEach(([key, m]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = m.label || key;
+    sel.appendChild(opt);
+  });
+}
+
+/* ======================= DOM REFS ======================= */
+const $ = id => document.getElementById(id);
+const dropzone = $('dropzone'), dropzoneInner = $('dropzoneInner'), fileInput = $('fileInput');
+const materialSel = $('material');
+
+let currentModel = null;
+
+/* ======================= STL PARSING (igual à ferramenta interna) ======================= */
+function parseSTL(buffer){
+  const dv = new DataView(buffer);
+  let isBinary = true;
+  if (buffer.byteLength < 84) isBinary = false;
+  else {
+    const triCount = dv.getUint32(80, true);
+    const expected = 84 + triCount * 50;
+    if (expected !== buffer.byteLength) isBinary = false;
+  }
+  return isBinary ? parseBinarySTL(dv) : parseAsciiSTL(buffer);
+}
+function parseBinarySTL(dv){
+  const triCount = dv.getUint32(80, true);
+  const verts = new Float32Array(triCount * 9);
+  let offset = 84;
+  for (let i = 0; i < triCount; i++){
+    offset += 12;
+    for (let v = 0; v < 3; v++){
+      const base = i*9 + v*3;
+      verts[base]   = dv.getFloat32(offset, true); offset += 4;
+      verts[base+1] = dv.getFloat32(offset, true); offset += 4;
+      verts[base+2] = dv.getFloat32(offset, true); offset += 4;
+    }
+    offset += 2;
+  }
+  return verts;
+}
+function parseAsciiSTL(buffer){
+  const text = new TextDecoder().decode(buffer);
+  const re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
+  const nums = [];
+  let m;
+  while ((m = re.exec(text)) !== null){
+    nums.push(parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3]));
+  }
+  return new Float32Array(nums);
+}
+function computeGeometryStats(verts){
+  let volume = 0, area = 0;
+  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  const triCount = verts.length / 9;
+  for (let i = 0; i < triCount; i++){
+    const o = i*9;
+    const p1x=verts[o],p1y=verts[o+1],p1z=verts[o+2];
+    const p2x=verts[o+3],p2y=verts[o+4],p2z=verts[o+5];
+    const p3x=verts[o+6],p3y=verts[o+7],p3z=verts[o+8];
+    minX=Math.min(minX,p1x,p2x,p3x); maxX=Math.max(maxX,p1x,p2x,p3x);
+    minY=Math.min(minY,p1y,p2y,p3y); maxY=Math.max(maxY,p1y,p2y,p3y);
+    minZ=Math.min(minZ,p1z,p2z,p3z); maxZ=Math.max(maxZ,p1z,p2z,p3z);
+    volume += (p1x*(p2y*p3z - p2z*p3y) + p1y*(p2z*p3x - p2x*p3z) + p1z*(p2x*p3y - p2y*p3x)) / 6;
+    const e1x=p2x-p1x, e1y=p2y-p1y, e1z=p2z-p1z;
+    const e2x=p3x-p1x, e2y=p3y-p1y, e2z=p3z-p1z;
+    const cx = e1y*e2z - e1z*e2y, cy = e1z*e2x - e1x*e2z, cz = e1x*e2y - e1y*e2x;
+    area += 0.5 * Math.sqrt(cx*cx + cy*cy + cz*cz);
+  }
+  return { volume: Math.abs(volume), area, bbox: { x: maxX-minX, y: maxY-minY, z: maxZ-minZ } };
+}
+
+/* ======================= 3D VIEWER ======================= */
+let scene, camera, renderer, group, mesh;
+let dragging = false, lastX = 0, lastY = 0, rotY = 0.4, rotX = -0.3;
+
+function initViewer(){
+  if (typeof THREE === 'undefined') return;
+  const el = $('viewer');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(40, el.clientWidth/el.clientHeight, 0.1, 100);
+  camera.position.set(0, 0, 6);
+  renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(el.clientWidth, el.clientHeight);
+  el.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0x8fa3c0, 1.1));
+  const d1 = new THREE.DirectionalLight(0xffffff, 1.1); d1.position.set(3,4,5); scene.add(d1);
+  const d2 = new THREE.DirectionalLight(0x0077cc, 0.6); d2.position.set(-4,-2,-3); scene.add(d2);
+
+  group = new THREE.Group();
+  scene.add(group);
+
+  el.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+  window.addEventListener('pointerup', () => dragging = false);
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    rotY += (e.clientX - lastX) * 0.008;
+    rotX += (e.clientY - lastY) * 0.008;
+    rotX = Math.max(-1.4, Math.min(1.4, rotX));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('resize', () => {
+    if (!el.clientWidth) return;
+    camera.aspect = el.clientWidth/el.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(el.clientWidth, el.clientHeight);
+  });
+  animate();
+}
+function animate(){
+  requestAnimationFrame(animate);
+  if (group){
+    if (!dragging) rotY += 0.0035;
+    group.rotation.y = rotY;
+    group.rotation.x = rotX;
+  }
+  if (renderer) renderer.render(scene, camera);
+}
+function showMesh(verts, bbox){
+  if (typeof THREE === 'undefined' || !renderer) return;
+  if (mesh){ group.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(verts.slice(), 3));
+  geo.computeVertexNormals();
+  geo.center();
+  const mat = new THREE.MeshStandardMaterial({ color: 0x0077cc, roughness: 0.4, metalness: 0.2 });
+  mesh = new THREE.Mesh(geo, mat);
+  const maxDim = Math.max(bbox.x, bbox.y, bbox.z) || 1;
+  mesh.scale.setScalar(2.6 / maxDim);
+  group.add(mesh);
+}
+
+/* ======================= FILE HANDLING ======================= */
+['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file){
+  if (!file.name.toLowerCase().endsWith('.stl')){ alert('Por favor escolhe um ficheiro .stl'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const verts = parseSTL(e.target.result);
+      if (verts.length < 9) throw new Error('Ficheiro STL vazio ou inválido');
+      currentModel = computeGeometryStats(verts);
+      $('viewerCard').style.display = 'block';
+      showMesh(verts, currentModel.bbox);
+      renderDropzoneFile(file);
+      $('materialCard').style.display = 'block';
+      $('placeholder').style.display = 'none';
+      recalc();
+    } catch(err){
+      alert('Não foi possível ler este STL: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderDropzoneFile(file){
+  dropzone.classList.add('has-file');
+  dropzoneInner.innerHTML = `
+    <div class="dz-file-row">
+      <div class="dz-icon" style="margin:0;width:34px;height:34px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M4 6a2 2 0 012-2h7l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="flex:1;text-align:left;">
+        <b style="font-size:13px;">${file.name}</b>
+        <div class="dz-file-meta">${(file.size/1024).toFixed(1)} KB</div>
+      </div>
+      <button class="btn-ghost" id="changeFileBtn" type="button">Trocar</button>
+    </div>
+  `;
+  $('changeFileBtn').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+}
+
+materialSel.addEventListener('change', recalc);
+
+/* ======================= CÁLCULO (peso e tempo escondidos do cliente) ======================= */
+function recalc(){
+  if (!currentModel) return;
+  const m = MATERIALS[materialSel.value];
+  if (!m) return;
+
+  const V = currentModel.volume, SA = currentModel.area, bbox = currentModel.bbox;
+
+  const wallThickness = DEFAULT_WALLS * DEFAULT_NOZZLE;
+  let shellVolume = Math.min(SA * wallThickness, V);
+  const footprint = bbox.x * bbox.y;
+  const tbThickness = DEFAULT_TOP_BOTTOM_LAYERS * DEFAULT_LAYER_HEIGHT;
+  let tbVolume = Math.min(footprint * tbThickness * 2, Math.max(V - shellVolume, 0));
+  if (tbVolume < 0) tbVolume = 0;
+  let solidSkin = Math.min(shellVolume + tbVolume, V);
+  const core = Math.max(V - solidSkin, 0);
+  const infillVolume = core * DEFAULT_INFILL;
+  const totalVolume = solidSkin + infillVolume;
+
+  const weightG = (totalVolume/1000) * m.density;
+
+  const layers = Math.max(Math.round(bbox.z / DEFAULT_LAYER_HEIGHT), 1);
+  let timeS = totalVolume / m.flow;
+  timeS += layers * 3;
+  timeS *= 1.15;
+  const timeH = timeS / 3600;
+
+  const materialCost = (weightG/1000) * m.cost;
+  const machineCost = (CONFIG.printerPrice / CONFIG.printerLifetime) * timeH;
+  const laborCost = CONFIG.laborRate * ((CONFIG.prepMinutes + CONFIG.postMinutes) / 60);
+  const markupBase = materialCost + machineCost + laborCost;
+
+  const consumablesCost = CONFIG.consumablesPerHour * timeH;
+  const electricityCost = (CONFIG.power/1000) * timeH * CONFIG.electricity;
+  const passThroughCost = consumablesCost + electricityCost + CONFIG.packaging + CONFIG.shipping;
+
+  const subtotal = markupBase + passThroughCost;
+  const profit = markupBase * (CONFIG.margin/100);
+  const finalPrice = subtotal + profit;
+
+  $('finalPrice').textContent = finalPrice.toFixed(2);
+  $('result').style.display = 'block';
+
+  const subject = encodeURIComponent('Pedido de orçamento — Impressão 3D');
+  const body = encodeURIComponent(
+    `Olá,\n\nGostaria de pedir um orçamento para a peça que enviei.\n\nMaterial: ${m.label}\nPreço estimado: €${finalPrice.toFixed(2)}\n\nObrigado.`
+  );
+  $('ctaBtn').href = `mailto:geral@paengineering.pt?subject=${subject}&body=${body}`;
+}
+
+/* ======================= INIT ======================= */
+loadConfig();
+initViewer();
+</script>
+</body>
+</html>

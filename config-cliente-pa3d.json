@@ -1,0 +1,28 @@
+{
+  "_como_editar": "Este ficheiro controla os preços da calculadora do site (Wix). Edita os números à vontade — o cliente nunca vê estes valores, só o preço final. Depois de guardares, faz upload deste ficheiro para o GitHub com o mesmo nome, ao lado do orcamento-cliente-pa3d.html.",
+
+  "materiais": {
+    "PLA":   { "nome": "PLA",            "densidade": 1.24, "custo_kg": 18, "caudal": 15 },
+    "PETG":  { "nome": "PETG",           "densidade": 1.27, "custo_kg": 22, "caudal": 10 },
+    "ABS":   { "nome": "ABS",            "densidade": 1.04, "custo_kg": 19, "caudal": 12 },
+    "ASA":   { "nome": "ASA",            "densidade": 1.05, "custo_kg": 24, "caudal": 11 },
+    "TPU":   { "nome": "TPU (flexível)", "densidade": 1.21, "custo_kg": 28, "caudal": 5  },
+    "NYLON": { "nome": "Nylon",          "densidade": 1.14, "custo_kg": 35, "caudal": 9  }
+  },
+
+  "custos_fixos": {
+    "preco_impressora": 300,
+    "vida_util_horas": 8000,
+    "consumiveis_hora": 0.08,
+    "custo_operador_hora": 10,
+    "preparacao_min": 15,
+    "pos_processamento_min": 10,
+    "embalagem": 2,
+    "envio": 5,
+    "potencia_impressora_w": 150,
+    "eletricidade_kwh": 0.25,
+    "margem_lucro": 30
+  },
+
+  "_legenda_custos_fixos": "margem_lucro incide só sobre material + amortização da impressora + mão de obra (custo_operador_hora × (preparacao_min + pos_processamento_min)). Consumíveis, eletricidade, embalagem e envio entram ao custo, sem margem."
+}
