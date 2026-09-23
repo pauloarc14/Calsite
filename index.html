@@ -154,7 +154,7 @@
   <div class="result" id="result">
     <div class="label">Preço estimado</div>
     <div class="price"><small>€</small><span id="finalPrice">0.00</span></div>
-    <a class="cta" id="ctaBtn" href="#">Solicitar Orçamento</a>
+    <a class="cta" id="ctaBtn" href="#" target="_top">Solicitar Orçamento</a>
     <div class="note">Valor estimado. O preço final é confirmado após análise do ficheiro.</div>
   </div>
 
@@ -232,6 +232,7 @@ function populateMaterialSelect(){
 
 /* ======================= DOM REFS ======================= */
 const $ = id => document.getElementById(id);
+window.addEventListener('error', e => showError('Ocorreu um erro inesperado: ' + e.message));
 const dropzone = $('dropzone'), dropzoneInner = $('dropzoneInner'), fileInput = $('fileInput');
 const materialSel = $('material');
 
@@ -327,12 +328,7 @@ function initViewer(){
     rotX = Math.max(-1.4, Math.min(1.4, rotX));
     lastX = e.clientX; lastY = e.clientY;
   });
-  window.addEventListener('resize', () => {
-    if (!el.clientWidth) return;
-    camera.aspect = el.clientWidth/el.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(el.clientWidth, el.clientHeight);
-  });
+  window.addEventListener('resize', resizeViewer);
   animate();
 }
 function animate(){
@@ -343,6 +339,15 @@ function animate(){
     group.rotation.x = rotX;
   }
   if (renderer) renderer.render(scene, camera);
+}
+function resizeViewer(){
+  if (!renderer || !camera) return;
+  const el = $('viewer');
+  const w = el.clientWidth, h = el.clientHeight;
+  if (!w || !h) return; // caixa ainda escondida (display:none) — nada a redimensionar
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
 }
 function showMesh(verts, bbox){
   if (typeof THREE === 'undefined' || !renderer) return;
@@ -365,22 +370,42 @@ dropzone.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (
 dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
+function showError(msg){
+  console.error('[Calculadora 3D]', msg);
+  let el = $('errorBanner');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'errorBanner';
+    el.style.cssText = 'background:#fdecec;border:1px solid #f5b5b5;color:#a02020;padding:12px 14px;border-radius:10px;font-size:12.5px;margin-bottom:16px;';
+    document.querySelector('.wrap').insertBefore(el, document.querySelector('.dropzone'));
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearError(){
+  const el = $('errorBanner');
+  if (el) el.style.display = 'none';
+}
+
 function handleFile(file){
-  if (!file.name.toLowerCase().endsWith('.stl')){ alert('Por favor escolhe um ficheiro .stl'); return; }
+  clearError();
+  if (!file.name.toLowerCase().endsWith('.stl')){ showError('Por favor escolhe um ficheiro .stl'); return; }
   const reader = new FileReader();
+  reader.onerror = () => showError('Não foi possível ler este ficheiro (erro ao aceder ao ficheiro).');
   reader.onload = e => {
     try {
       const verts = parseSTL(e.target.result);
       if (verts.length < 9) throw new Error('Ficheiro STL vazio ou inválido');
       currentModel = computeGeometryStats(verts);
       $('viewerCard').style.display = 'block';
+      resizeViewer();
       showMesh(verts, currentModel.bbox);
       renderDropzoneFile(file);
       $('materialCard').style.display = 'block';
       $('placeholder').style.display = 'none';
       recalc();
     } catch(err){
-      alert('Não foi possível ler este STL: ' + err.message);
+      showError('Não foi possível ler este STL: ' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
