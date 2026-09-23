@@ -7,21 +7,21 @@
     "ABS":   { "nome": "ABS",            "densidade": 1.04, "custo_kg": 19, "caudal": 12 },
     "ASA":   { "nome": "ASA",            "densidade": 1.05, "custo_kg": 24, "caudal": 11 },
     "TPU":   { "nome": "TPU (flexível)", "densidade": 1.21, "custo_kg": 28, "caudal": 5  },
-    "NYLON": { "nome": "Nylon",          "densidade": 1.14, "custo_kg": 35, "caudal": 9  }
+    "NYLON": { "nome": "Nylon",          "densidade": 1.14, "custo_kg": 100, "caudal": 9  }
   },
 
   "custos_fixos": {
-    "preco_impressora": 300,
-    "vida_util_horas": 8000,
+    "preco_impressora": 1500,
+    "vida_util_horas": 6000,
     "consumiveis_hora": 0.08,
     "custo_operador_hora": 10,
     "preparacao_min": 15,
     "pos_processamento_min": 10,
     "embalagem": 2,
-    "envio": 5,
-    "potencia_impressora_w": 150,
+    "envio": 0,
+    "potencia_impressora_w": 250,
     "eletricidade_kwh": 0.25,
-    "margem_lucro": 30
+    "margem_lucro": 170
   },
 
   "_legenda_custos_fixos": "margem_lucro incide só sobre material + amortização da impressora + mão de obra (custo_operador_hora × (preparacao_min + pos_processamento_min)). Consumíveis, eletricidade, embalagem e envio entram ao custo, sem margem."
