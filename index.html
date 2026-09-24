@@ -58,11 +58,23 @@
     .card { padding: 20px; }
   }
 
+  /* MENSAGEM DE AVISO DE TAMANHO MÁXIMO */
+  .info-badge {
+    background: #eef6ff;
+    border: 1px solid #cce3ff;
+    color: #005599;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
   .field{margin-bottom:0;}
   .field label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;}
   .field label span{font-weight:400;color:var(--text-dim);}
 
-  select, input[type="number"], input[type="email"], input[type="text"], input[type="file"], textarea{
+  select, input[type="number"], input[type="email"], input[type="text"], input[type="url"], input[type="file"], textarea{
     width:100%;
     background:var(--panel-2);
     border:1px solid var(--border);
@@ -89,6 +101,28 @@
     background-repeat:no-repeat;background-position:right 14px center;padding-right:32px;
   }
   select:focus, input:focus, textarea:focus{border-color:var(--accent);}
+
+  /* BOTÃO DE REMOVER FICHEIROS */
+  .file-actions {
+    margin-top: 12px;
+    display: none;
+  }
+  .btn-remove {
+    background: #fff0f0;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .btn-remove:hover {
+    background: #ffe0e0;
+    border-color: #e57373;
+  }
 
   #viewerCard{
     background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);
@@ -139,27 +173,41 @@
   <h1>Pedido de Orçamento de Impressão 3D</h1>
   <p class="sub">Preenche os detalhes do teu projeto e envia-nos o teu pedido</p>
 
-  <!-- FORMULÁRIO NATIVO COM MULTIPART -->
   <form id="quoteForm" action="https://formsubmit.co/3dpaengineering@gmail.com" method="POST" enctype="multipart/form-data">
     
-    <!-- Configurações ocultas do FormSubmit -->
     <input type="hidden" name="_subject" id="formSubject" value="Novo Pedido de Orçamento 3D">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_captcha" value="false">
 
     <div class="card">
       
-      <!-- ENTRADA DE VÁRIOS FICHEIROS -->
+      <!-- MENSAGEM DE AVISO DE TAMANHO -->
+      <div class="info-badge">
+        ℹ️ <strong>Limite de Anexo:</strong> O tamanho máximo total permitido para envio direto de ficheiros é de <strong>25 MB</strong>. Para ficheiros maiores, utiliza o campo de link (WeTransfer / Google Drive) abaixo.
+      </div>
+
+      <!-- ENTRADA DE FICHEIROS -->
       <div class="grid-fields" style="margin-top:0;">
         <div class="field">
-          <label>Ficheiro(s) 3D (.STL) <span>(Opcional / Vários)</span></label>
-          <input type="file" id="fileInput" name="Ficheiros_STL[]" accept=".stl" multiple>
+          <label>Ficheiro(s) 3D (.STL) <span>(Max 25MB total)</span></label>
+          <input type="file" id="fileInput" name="Ficheiros_STL" accept=".stl" multiple>
         </div>
 
         <div class="field">
-          <label>Imagem(ns) de Referência <span>(Opcional / Várias)</span></label>
-          <input type="file" id="imageInput" name="Imagens_Referencia[]" accept="image/*" multiple>
+          <label>Imagem(ns) de Referência <span>(Opcional)</span></label>
+          <input type="file" id="imageInput" name="Imagens_Referencia" accept="image/*" multiple>
         </div>
+      </div>
+
+      <!-- BOTÃO DE REMOVER FICHEIROS -->
+      <div class="file-actions" id="fileActions">
+        <button type="button" class="btn-remove" id="clearFilesBtn">🗑️ Remover Ficheiros Selecionados</button>
+      </div>
+
+      <!-- LINK PARA FICHEIROS PESADOS -->
+      <div class="field" style="margin-top:16px;">
+        <label>Link para ficheiros pesados <span>(WeTransfer / Google Drive / Dropbox - Opcional)</span></label>
+        <input type="url" name="Link_Ficheiros_Pesados" placeholder="https://wetransfer.com/...">
       </div>
 
       <!-- VIEWER 3D -->
@@ -247,10 +295,26 @@
 </div>
 
 <script>
-/* ======================= DOM REFS ======================= */
 const $ = id => document.getElementById(id);
 const fileInput = $('fileInput');
-const clientNameInput = $('clientName'), clientEmailInput =$('clientEmail');
+const imageInput = $('imageInput');
+const clearFilesBtn = $('clearFilesBtn');
+const fileActions = $('fileActions');
+const clientNameInput = $('clientName'), clientEmailInput = $('clientEmail');
+
+/* ======================= CONTROLAR BOTÃO DE REMOVER ======================= */
+function updateFileActions() {
+  const hasFiles = (fileInput.files && fileInput.files.length > 0) || (imageInput.files && imageInput.files.length > 0);
+  fileActions.style.display = hasFiles ? 'block' : 'none';
+}
+
+clearFilesBtn.addEventListener('click', () => {
+  fileInput.value = '';
+  imageInput.value = '';
+  updateFileActions();
+  $('viewerCard').style.display = 'none';
+  $('statusMsg').style.display = 'none';
+});
 
 /* ======================= STL PARSING ======================= */
 function parseSTL(buffer){
@@ -373,6 +437,7 @@ function showMesh(verts, bbox){
 
 /* ======================= PRÉ-VISUALIZAÇÃO 3D ======================= */
 fileInput.addEventListener('change', e => {
+  updateFileActions();
   const files = e.target.files;
   if (!files || files.length === 0) {
     $('viewerCard').style.display = 'none';
@@ -401,22 +466,35 @@ fileInput.addEventListener('change', e => {
   }
 });
 
-/* ======================= VALIDAÇÃO ANTES DE ENVIAR ======================= */
-$('quoteForm').addEventListener('submit', function(e) {
-  const name = clientNameInput.value.trim();
-  const email = clientEmailInput.value.trim();
+imageInput.addEventListener('change', () => {
+  updateFileActions();
+});
 
-  if (!name) {
+/* ======================= VALIDAÇÃO DE TAMANHO ======================= */
+$('quoteForm').addEventListener('submit', function(e) {
+  let totalBytes = 0;
+  
+  if (fileInput.files.length) {
+    for (let f of fileInput.files) totalBytes += f.size;
+  }
+  if (imageInput.files.length) {
+    for (let f of imageInput.files) totalBytes += f.size;
+  }
+
+  const maxBytes = 25 * 1024 * 1024; // Limite de 25 MB
+  if (totalBytes > maxBytes) {
     e.preventDefault();
-    showStatus('Por favor insere o teu nome.', 'error');
-    clientNameInput.focus();
+    const sizeMb = (totalBytes / (1024 * 1024)).toFixed(1);
+    showStatus(`Os ficheiros selecionados somam ${sizeMb} MB. O limite máximo é 25 MB. Por favor remove alguns ficheiros ou cola um link do WeTransfer / Google Drive no campo correspondente.`, 'error');
     return;
   }
 
-  if (!email || !email.includes('@')) {
+  const name = clientNameInput.value.trim();
+  const email = clientEmailInput.value.trim();
+
+  if (!name || !email || !email.includes('@')) {
     e.preventDefault();
-    showStatus('Por favor insere um e-mail válido.', 'error');
-    clientEmailInput.focus();
+    showStatus('Por favor preenche o teu Nome e E-mail corretamente.', 'error');
     return;
   }
 
@@ -430,7 +508,6 @@ function showStatus(msg, type) {
   el.style.display = 'block';
 }
 
-/* ======================= INIT ======================= */
 initViewer();
 </script>
 </body>
