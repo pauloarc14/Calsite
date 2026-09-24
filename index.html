@@ -139,115 +139,118 @@
   <h1>Pedido de Orçamento de Impressão 3D</h1>
   <p class="sub">Preenche os detalhes do teu projeto e envia-nos o teu pedido</p>
 
-  <div class="card">
+  <!-- FORMULÁRIO NATIVO COM MULTIPART -->
+  <form id="quoteForm" action="https://formsubmit.co/3dpaengineering@gmail.com" method="POST" enctype="multipart/form-data">
     
-    <!-- ENTRADA DE VÁRIOS FICHEIROS LADO A LADO -->
-    <div class="grid-fields" style="margin-top:0;">
-      <div class="field">
-        <label>Ficheiro(s) 3D (.STL) <span>(Opcional / Vários)</span></label>
-        <input type="file" id="fileInput" accept=".stl" multiple>
+    <!-- Configurações ocultas do FormSubmit -->
+    <input type="hidden" name="_subject" id="formSubject" value="Novo Pedido de Orçamento 3D">
+    <input type="hidden" name="_template" value="table">
+    <input type="hidden" name="_captcha" value="false">
+
+    <div class="card">
+      
+      <!-- ENTRADA DE VÁRIOS FICHEIROS -->
+      <div class="grid-fields" style="margin-top:0;">
+        <div class="field">
+          <label>Ficheiro(s) 3D (.STL) <span>(Opcional / Vários)</span></label>
+          <input type="file" id="fileInput" name="Ficheiros_STL[]" accept=".stl" multiple>
+        </div>
+
+        <div class="field">
+          <label>Imagem(ns) de Referência <span>(Opcional / Várias)</span></label>
+          <input type="file" id="imageInput" name="Imagens_Referencia[]" accept="image/*" multiple>
+        </div>
       </div>
 
-      <div class="field">
-        <label>Imagem(ns) de Referência <span>(Opcional / Várias)</span></label>
-        <input type="file" id="imageInput" accept="image/*" multiple>
+      <!-- VIEWER 3D -->
+      <div id="viewerCard">
+        <div id="viewer">
+          <div class="viewer-hint">arrasta para rodar o modelo 3D</div>
+        </div>
       </div>
+
+      <!-- SELEÇÃO DE MATERIAIS E CORES -->
+      <div class="grid-fields">
+        <div class="field">
+          <label>Material Pretendido</label>
+          <select id="material" name="Material">
+            <option value="PLA">PLA</option>
+            <option value="PETG">PETG</option>
+            <option value="ABS">ABS</option>
+            <option value="ASA">ASA</option>
+            <option value="TPU (flexível)">TPU (flexível)</option>
+            <option value="Nylon">Nylon</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Cor</label>
+          <select id="color" name="Cor">
+            <option value="Preto" selected>Preto</option>
+            <option value="Branco">Branco</option>
+            <option value="Cinzento">Cinzento</option>
+            <option value="Outra (especificar nas observações)">Outra</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- PREENCHIMENTO E QUANTIDADE -->
+      <div class="grid-fields">
+        <div class="field">
+          <label>Preenchimento (Infill)</label>
+          <select id="infill" name="Preenchimento_Infill">
+            <option value="15%" selected>15% (Padrão)</option>
+            <option value="20%">20% (Resistente)</option>
+            <option value="30%">30% (Alta Carga)</option>
+            <option value="50%">50% (Extra Forte)</option>
+            <option value="100%">100% (Sólido)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Quantidade de Peças</label>
+          <input type="number" id="quantity" name="Quantidade" value="1" min="1" step="1">
+        </div>
+      </div>
+
+      <!-- DADOS DO CLIENTE -->
+      <div class="grid-fields">
+        <div class="field">
+          <label>O teu Nome *</label>
+          <input type="text" id="clientName" name="Nome_do_Cliente" placeholder="Ex: João Silva" required>
+        </div>
+
+        <div class="field">
+          <label>O teu E-mail *</label>
+          <input type="email" id="clientEmail" name="Email_do_Cliente" placeholder="exemplo@email.com" required>
+        </div>
+      </div>
+
+      <!-- OBSERVAÇÕES -->
+      <div class="field" style="margin-top:16px;">
+        <label>Observações / Descrição do Projeto <span>(Opcional)</span></label>
+        <textarea id="clientNotes" name="Observacoes" placeholder="Descreve detalhes do projeto, dimensões aproximadas caso não tenhas ficheiro 3D, ou acabamentos pretendidos..."></textarea>
+      </div>
+
     </div>
 
-    <!-- VIEWER 3D -->
-    <div id="viewerCard">
-      <div id="viewer">
-        <div class="viewer-hint">arrasta para rodar o modelo 3D</div>
+    <div class="result">
+      <div>
+        <button class="cta" type="submit">Solicitar Orçamento</button>
       </div>
+      <div class="status-msg" id="statusMsg"></div>
+      <div class="note">Analisaremos o teu pedido e responderemos com o orçamento detalhado por e-mail.</div>
     </div>
 
-    <!-- SELEÇÃO DE MATERIAIS E CORES -->
-    <div class="grid-fields">
-      <div class="field">
-        <label>Material Pretendido</label>
-        <select id="material">
-          <option value="PLA">PLA</option>
-          <option value="PETG">PETG</option>
-          <option value="ABS">ABS</option>
-          <option value="ASA">ASA</option>
-          <option value="TPU (flexível)">TPU (flexível)</option>
-          <option value="Nylon">Nylon</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Cor</label>
-        <select id="color">
-          <option value="Preto" selected>Preto</option>
-          <option value="Branco">Branco</option>
-          <option value="Cinzento">Cinzento</option>
-          <option value="Outra (especificar nas observações)">Outra</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- PREENCHIMENTO E QUANTIDADE -->
-    <div class="grid-fields">
-      <div class="field">
-        <label>Preenchimento (Infill)</label>
-        <select id="infill">
-          <option value="15%" selected>15% (Padrão)</option>
-          <option value="20%">20% (Resistente)</option>
-          <option value="30%">30% (Alta Carga)</option>
-          <option value="50%">50% (Extra Forte)</option>
-          <option value="100%">100% (Sólido)</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Quantidade de Peças</label>
-        <input type="number" id="quantity" value="1" min="1" step="1">
-      </div>
-    </div>
-
-    <!-- DADOS DO CLIENTE -->
-    <div class="grid-fields">
-      <div class="field">
-        <label>O teu Nome *</label>
-        <input type="text" id="clientName" placeholder="Ex: João Silva" required>
-      </div>
-
-      <div class="field">
-        <label>O teu E-mail *</label>
-        <input type="email" id="clientEmail" placeholder="exemplo@email.com" required>
-      </div>
-    </div>
-
-    <!-- OBSERVAÇÕES -->
-    <div class="field" style="margin-top:16px;">
-      <label>Observações / Descrição do Projeto <span>(Opcional)</span></label>
-      <textarea id="clientNotes" placeholder="Descreve detalhes do projeto, dimensões aproximadas caso não tenhas ficheiro 3D, ou acabamentos pretendidos..."></textarea>
-    </div>
-
-  </div>
-
-  <div class="result">
-    <div>
-      <button class="cta" id="ctaBtn" type="button">Solicitar Orçamento</button>
-    </div>
-    <div class="status-msg" id="statusMsg"></div>
-    <div class="note">Analisaremos o teu pedido e responderemos com o orçamento detalhado por e-mail.</div>
-  </div>
+  </form>
 
 </div>
 
 <script>
-/* ======================= CONFIGURAÇÃO DO DESTINATÁRIO ======================= */
-const DESTINATION_EMAIL = "3dpaengineering@gmail.com";
-
 /* ======================= DOM REFS ======================= */
 const $ = id => document.getElementById(id);
 const fileInput = $('fileInput');
-const imageInput = $('imageInput');
-const materialSel = $('material'), infillSel =$('infill'), colorSel = $('color'), quantityInput =$('quantity');
-const clientNameInput = $('clientName'), clientEmailInput = $('clientEmail'), clientNotesInput =$('clientNotes');
-
-let currentFileNames = 'Nenhum ficheiro STL fornecido';
+const clientNameInput = $('clientName'), clientEmailInput =$('clientEmail');
 
 /* ======================= STL PARSING ======================= */
 function parseSTL(buffer){
@@ -368,18 +371,14 @@ function showMesh(verts, bbox){
   group.add(mesh);
 }
 
-/* ======================= GESTÃO DE MÚLTIPLOS FICHEIROS ======================= */
+/* ======================= PRÉ-VISUALIZAÇÃO 3D ======================= */
 fileInput.addEventListener('change', e => {
   const files = e.target.files;
   if (!files || files.length === 0) {
-    currentFileNames = 'Nenhum ficheiro STL fornecido';
     $('viewerCard').style.display = 'none';
     return;
   }
 
-  currentFileNames = Array.from(files).map(f => f.name).join(', ');
-
-  // Carrega o primeiro ficheiro STL válido na pré-visualização 3D
   const firstStl = Array.from(files).find(f => f.name.toLowerCase().endsWith('.stl'));
   if (firstStl) {
     const reader = new FileReader();
@@ -402,72 +401,26 @@ fileInput.addEventListener('change', e => {
   }
 });
 
-/* ======================= ENVIO DIRETO DE FORMULÁRIO ======================= */
-$('ctaBtn').addEventListener('click', function() {
+/* ======================= VALIDAÇÃO ANTES DE ENVIAR ======================= */
+$('quoteForm').addEventListener('submit', function(e) {
   const name = clientNameInput.value.trim();
   const email = clientEmailInput.value.trim();
-  const notes = clientNotesInput.value.trim();
 
   if (!name) {
+    e.preventDefault();
     showStatus('Por favor insere o teu nome.', 'error');
     clientNameInput.focus();
     return;
   }
 
   if (!email || !email.includes('@')) {
+    e.preventDefault();
     showStatus('Por favor insere um e-mail válido.', 'error');
     clientEmailInput.focus();
     return;
   }
 
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = `https://formsubmit.co/${DESTINATION_EMAIL}`;
-  form.enctype = 'multipart/form-data';
-
-  const imageNames = imageInput.files.length > 0 
-    ? Array.from(imageInput.files).map(f => f.name).join(', ') 
-    : 'Nenhuma imagem fornecida';
-
-  const fields = {
-    "_subject": `Novo Pedido de Orçamento 3D — ${name}`,
-    "_template": "table",
-    "_captcha": "false",
-    "Nome do Cliente": name,
-    "E-mail do Cliente": email,
-    "Ficheiros STL": currentFileNames,
-    "Imagens de Referência": imageNames,
-    "Material Pretendido": materialSel.value,
-    "Cor": colorSel.value,
-    "Preenchimento (Infill)": infillSel.value,
-    "Quantidade": quantityInput.value + ' uni.',
-    "Observações": notes || 'Sem observações.'
-  };
-
-  for (const [key, value] of Object.entries(fields)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = value;
-    form.appendChild(input);
-  }
-
-  // Anexa todos os ficheiros STL selecionados
-  if (fileInput.files.length > 0) {
-    const stlClone = fileInput.cloneNode(true);
-    stlClone.name = "attachment_stl";
-    form.appendChild(stlClone);
-  }
-
-  // Anexa todas as imagens selecionadas
-  if (imageInput.files.length > 0) {
-    const imgClone = imageInput.cloneNode(true);
-    imgClone.name = "attachment_image";
-    form.appendChild(imgClone);
-  }
-
-  document.body.appendChild(form);
-  form.submit();
+  $('formSubject').value = `Novo Pedido de Orçamento 3D — ${name}`;
 });
 
 function showStatus(msg, type) {
