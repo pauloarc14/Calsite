@@ -76,15 +76,38 @@
     background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);
     padding:18px;margin-bottom:16px;box-shadow:var(--shadow);
   }
+  
+  .grid-fields{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:14px;
+  }
+
+  @media (max-width: 480px) {
+    .grid-fields { grid-template-columns: 1fr; }
+  }
+
   .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:8px;}
-  select{
+  select, input[type="number"], input[type="email"], input[type="text"], input[type="file"], textarea{
     width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
     padding:11px 12px;border-radius:9px;font-size:14px;font-family:'Space Grotesk',sans-serif;
-    outline:none;appearance:none;-webkit-appearance:none;
+    outline:none;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  input[type="file"] {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  select{
+    appearance:none;-webkit-appearance:none;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7580'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 14px center;padding-right:32px;
   }
-  select:focus{border-color:var(--accent);}
+  select:focus, input:focus, textarea:focus{border-color:var(--accent);}
 
   .placeholder{
     text-align:center;color:var(--text-faint);font-size:13px;padding:18px 10px;
@@ -93,13 +116,9 @@
   .result{
     background:linear-gradient(160deg, #eaf4fc 0%, #ffffff 65%);
     border:1px solid #d6e9f9;border-radius:var(--radius);
-    padding:26px 22px;text-align:center;display:none;box-shadow:var(--shadow);
+    padding:24px 22px;text-align:center;display:none;box-shadow:var(--shadow);
   }
-  .result .label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
-  .result .price{
-    font-size:42px;font-weight:700;color:var(--text);margin:8px 0 18px;letter-spacing:-0.01em;
-  }
-  .result .price small{font-size:20px;color:var(--accent);font-weight:600;}
+  .result .label{font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;}
   .cta{
     display:inline-block;background:var(--accent);color:#fff;border:none;
     padding:13px 28px;border-radius:100px;font-size:14.5px;font-weight:600;
@@ -107,21 +126,27 @@
     transition:background .15s, transform .12s;
   }
   .cta:hover{background:var(--accent-light);transform:translateY(-1px);}
-  .result .note{margin-top:14px;font-size:11px;color:var(--text-faint);}
+  .cta:disabled{background:#a3c2db;cursor:not-allowed;transform:none;}
+  .result .note{margin-top:12px;font-size:11.5px;color:var(--text-dim);}
 
-  .loading-spin{
-    display:inline-block;width:14px;height:14px;border-radius:50%;
-    border:2px solid var(--border);border-top-color:var(--accent);
-    animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px;
+  .status-msg{
+    display:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:13px;
+    margin-top:14px;
+    font-weight:500;
+    text-align:left;
+    word-break:break-word;
   }
-  @keyframes spin{to{transform:rotate(360deg);}}
+  .status-msg.error{background:#fdecec;color:#a02020;border:1px solid #f5b5b5;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>Calculadora de Orçamento</h1>
-  <p class="sub">Carrega o teu modelo 3D e recebe uma estimativa de preço imediata</p>
+  <h1>Pedido de Orçamento de Impressão 3D</h1>
+  <p class="sub">Carrega o teu modelo 3D e envia-nos os detalhes do teu projeto</p>
 
   <div class="dropzone" id="dropzone">
     <div class="dropzone-inner" id="dropzoneInner">
@@ -147,22 +172,74 @@
       <label>Material</label>
       <select id="material"></select>
     </div>
+
+    <div class="grid-fields">
+      <div class="field">
+        <label>Cor</label>
+        <select id="color">
+          <option value="Preto" selected>Preto</option>
+          <option value="Branco">Branco</option>
+          <option value="Cinzento">Cinzento</option>
+          <option value="Outra (especificar no contacto)">Outra</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Preenchimento (Infill)</label>
+        <select id="infill">
+          <option value="0.15" selected>15% (Padrão)</option>
+          <option value="0.20">20% (Resistente)</option>
+          <option value="0.30">30% (Alta Carga)</option>
+          <option value="0.50">50% (Extra Forte)</option>
+          <option value="1.00">100% (Sólido)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-fields">
+      <div class="field">
+        <label>Quantidade de Peças</label>
+        <input type="number" id="quantity" value="1" min="1" step="1">
+      </div>
+      
+      <div class="field">
+        <label>O teu Nome *</label>
+        <input type="text" id="clientName" placeholder="Ex: João Silva" required>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>O teu E-mail *</label>
+      <input type="email" id="clientEmail" placeholder="exemplo@email.com" required>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>Observações / Mensagem (Opcional)</label>
+      <textarea id="clientNotes" placeholder="Descreve detalhes do projeto, requisitos técnicos ou acabamentos pretendidos..."></textarea>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>Anexar Imagem de Referência (Opcional)</label>
+      <input type="file" id="imageInput" accept="image/*">
+    </div>
   </div>
 
-  <p class="placeholder" id="placeholder">Assim que carregares o ficheiro, calculamos o preço automaticamente.</p>
+  <p class="placeholder" id="placeholder">Assim que carregares o ficheiro, poderás solicitar o teu orçamento.</p>
 
   <div class="result" id="result">
-    <div class="label">Preço estimado</div>
-    <div class="price"><small>€</small><span id="finalPrice">0.00</span></div>
-    <a class="cta" id="ctaBtn" href="#" target="_top">Solicitar Orçamento</a>
-    <div class="note">Valor estimado. O preço final é confirmado após análise do ficheiro.</div>
+    <div class="label">Tudo pronto para enviar o pedido</div>
+    <button class="cta" id="ctaBtn" type="button">Solicitar Orçamento</button>
+    <div class="status-msg" id="statusMsg"></div>
+    <div class="note">Analisaremos o teu ficheiro e responderemos com o orçamento detalhado por e-mail.</div>
   </div>
 
 </div>
 
 <script>
+/* ======================= CONFIGURAÇÃO DO DESTINATÁRIO ======================= */
+const DESTINATION_EMAIL = "3dpaengineering@gmail.com";
+
 /* ======================= CONFIGURAÇÃO (materiais + custos fixos) ======================= */
-// Predefinições de reserva — usadas apenas se não for possível carregar config-cliente-pa3d.json
 let MATERIALS = {
   PLA:   { density: 1.24, cost: 18, flow: 15, label: 'PLA' },
   PETG:  { density: 1.27, cost: 22, flow: 10, label: 'PETG' },
@@ -178,12 +255,10 @@ let CONFIG = {
   packaging: 2, shipping: 5, power: 150, electricity: 0.25, margin: 30
 };
 
-// Parâmetros de fatiamento fixos, para a estimativa geométrica de peso e tempo
 const DEFAULT_WALLS = 2;
 const DEFAULT_NOZZLE = 0.4;
 const DEFAULT_LAYER_HEIGHT = 0.2;
 const DEFAULT_TOP_BOTTOM_LAYERS = 4;
-const DEFAULT_INFILL = 0.15;
 
 async function loadConfig(){
   try {
@@ -233,12 +308,17 @@ function populateMaterialSelect(){
 /* ======================= DOM REFS ======================= */
 const $ = id => document.getElementById(id);
 window.addEventListener('error', e => showError('Ocorreu um erro inesperado: ' + e.message));
-const dropzone = $('dropzone'), dropzoneInner = $('dropzoneInner'), fileInput = $('fileInput');
-const materialSel = $('material');
+const dropzone = $('dropzone'), dropzoneInner = $('dropzoneInner'), fileInput =$('fileInput');
+const materialSel = $('material'), infillSel =$('infill'), colorSel = $('color'), quantityInput =$('quantity');
+const clientNameInput = $('clientName'), clientEmailInput =$('clientEmail');
+const clientNotesInput = $('clientNotes'), imageInput =$('imageInput');
 
 let currentModel = null;
+let currentFileName = '';
+let currentFile = null;
+let currentCalculations = {};
 
-/* ======================= STL PARSING (igual à ferramenta interna) ======================= */
+/* ======================= STL PARSING ======================= */
 function parseSTL(buffer){
   const dv = new DataView(buffer);
   let isBinary = true;
@@ -344,7 +424,7 @@ function resizeViewer(){
   if (!renderer || !camera) return;
   const el = $('viewer');
   const w = el.clientWidth, h = el.clientHeight;
-  if (!w || !h) return; // caixa ainda escondida (display:none) — nada a redimensionar
+  if (!w || !h) return;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
@@ -390,8 +470,10 @@ function clearError(){
 function handleFile(file){
   clearError();
   if (!file.name.toLowerCase().endsWith('.stl')){ showError('Por favor escolhe um ficheiro .stl'); return; }
+  currentFile = file;
+  currentFileName = file.name;
   const reader = new FileReader();
-  reader.onerror = () => showError('Não foi possível ler este ficheiro (erro ao aceder ao ficheiro).');
+  reader.onerror = () => showError('Não foi possível ler este ficheiro.');
   reader.onload = e => {
     try {
       const verts = parseSTL(e.target.result);
@@ -401,8 +483,7 @@ function handleFile(file){
       resizeViewer();
       showMesh(verts, currentModel.bbox);
       renderDropzoneFile(file);
-      $('materialCard').style.display = 'block';
-      $('placeholder').style.display = 'none';
+      $('materialCard').style.display = 'block';$('placeholder').style.display = 'none';
       recalc();
     } catch(err){
       showError('Não foi possível ler este STL: ' + err.message);
@@ -419,7 +500,7 @@ function renderDropzoneFile(file){
       </div>
       <div style="flex:1;text-align:left;">
         <b style="font-size:13px;">${file.name}</b>
-        <div class="dz-file-meta">${(file.size/1024).toFixed(1)} KB</div>
+        <div class="dz-file-meta">${(file.size/(1024*1024)).toFixed(2)} MB</div>
       </div>
       <button class="btn-ghost" id="changeFileBtn" type="button">Trocar</button>
     </div>
@@ -427,13 +508,23 @@ function renderDropzoneFile(file){
   $('changeFileBtn').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 }
 
-materialSel.addEventListener('change', recalc);
+/* ======================= LISTENERS DE ALTERAÇÃO ======================= */
+[materialSel, infillSel, colorSel, quantityInput].forEach(el => {
+  if (el) {
+    el.addEventListener('change', recalc);
+    el.addEventListener('input', recalc);
+  }
+});
 
-/* ======================= CÁLCULO (peso e tempo escondidos do cliente) ======================= */
+/* ======================= CÁLCULO INTERNO DE ESTIMATIVA ======================= */
 function recalc(){
   if (!currentModel) return;
   const m = MATERIALS[materialSel.value];
   if (!m) return;
+
+  const infillVal = parseFloat(infillSel.value) || 0.15;
+  const qty = Math.max(parseInt(quantityInput.value, 10) || 1, 1);
+  const selectedColor = colorSel.value || 'Preto';
 
   const V = currentModel.volume, SA = currentModel.area, bbox = currentModel.bbox;
 
@@ -445,7 +536,7 @@ function recalc(){
   if (tbVolume < 0) tbVolume = 0;
   let solidSkin = Math.min(shellVolume + tbVolume, V);
   const core = Math.max(V - solidSkin, 0);
-  const infillVolume = core * DEFAULT_INFILL;
+  const infillVolume = core * infillVal;
   const totalVolume = solidSkin + infillVolume;
 
   const weightG = (totalVolume/1000) * m.density;
@@ -467,16 +558,94 @@ function recalc(){
 
   const subtotal = markupBase + passThroughCost;
   const profit = markupBase * (CONFIG.margin/100);
-  const finalPrice = subtotal + profit;
+  
+  const unitPrice = subtotal + profit;
+  const totalPrice = unitPrice * qty;
 
-  $('finalPrice').textContent = finalPrice.toFixed(2);
   $('result').style.display = 'block';
 
-  const subject = encodeURIComponent('Pedido de orçamento — Impressão 3D');
-  const body = encodeURIComponent(
-    `Olá,\n\nGostaria de pedir um orçamento para a peça que enviei.\n\nMaterial: ${m.label}\nPreço estimado: €${finalPrice.toFixed(2)}\n\nObrigado.`
-  );
-  $('ctaBtn').href = `mailto:geral@paengineering.pt?subject=${subject}&body=${body}`;
+  currentCalculations = {
+    material: m.label,
+    color: selectedColor,
+    infill: Math.round(infillVal * 100) + '%',
+    quantity: qty,
+    unitPrice: unitPrice.toFixed(2),
+    totalPrice: totalPrice.toFixed(2),
+    volumeCm3: (V / 1000).toFixed(2),
+    dimensionsMm: `${bbox.x.toFixed(1)} x ${bbox.y.toFixed(1)} x ${bbox.z.toFixed(1)} mm`
+  };
+}
+
+/* ======================= ENVIO DIRETO EM FORMULÁRIO HTML ======================= */
+$('ctaBtn').addEventListener('click', function() {
+  const name = clientNameInput.value.trim();
+  const email = clientEmailInput.value.trim();
+  const notes = clientNotesInput.value.trim();
+
+  if (!name) {
+    showStatus('Por favor insere o teu nome.', 'error');
+    clientNameInput.focus();
+    return;
+  }
+
+  if (!email || !email.includes('@')) {
+    showStatus('Por favor insere um e-mail válido.', 'error');
+    clientEmailInput.focus();
+    return;
+  }
+
+  // Cria um formulário temporário para submissão direta
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `https://formsubmit.co/${DESTINATION_EMAIL}`;
+  form.enctype = 'multipart/form-data';
+
+  const fields = {
+    "_subject": `Novo Pedido de Orçamento 3D — ${name}`,
+    "_template": "table",
+    "_captcha": "false",
+    "Nome do Cliente": name,
+    "E-mail do Cliente": email,
+    "Ficheiro STL": currentFileName,
+    "Dimensões Peça": currentCalculations.dimensionsMm || 'N/A',
+    "Volume Peça": (currentCalculations.volumeCm3 || 'N/A') + ' cm³',
+    "Material": currentCalculations.material || 'N/A',
+    "Cor": currentCalculations.color || 'N/A',
+    "Infill": currentCalculations.infill || 'N/A',
+    "Quantidade": (currentCalculations.quantity || 1) + ' uni.',
+    "Observações": notes || 'Sem observações.',
+    "Estimativa Total Sugerida": '€' + (currentCalculations.totalPrice || '0.00')
+  };
+
+  for (const [key, value] of Object.entries(fields)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  }
+
+  if (fileInput.files[0]) {
+    const stlClone = fileInput.cloneNode(true);
+    stlClone.name = "attachment_stl";
+    form.appendChild(stlClone);
+  }
+
+  if (imageInput.files[0]) {
+    const imgClone = imageInput.cloneNode(true);
+    imgClone.name = "attachment_image";
+    form.appendChild(imgClone);
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+});
+
+function showStatus(msg, type) {
+  const el = $('statusMsg');
+  el.textContent = msg;
+  el.className = `status-msg ${type}`;
+  el.style.display = 'block';
 }
 
 /* ======================= INIT ======================= */
