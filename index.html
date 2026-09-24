@@ -9,7 +9,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
   :root{
-    --bg: transparent;
+    --bg: #ecebeb; /* Ajusta este código HEX caso o tom de cinzento do site seja diferente */
     --panel: #ffffff;
     --panel-2: #f4f6f9;
     --border: #e1e5eb;
@@ -26,7 +26,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background: transparent; /* Assume o fundo do site pai */
+    background: var(--bg);
     color:var(--text);
     font-family:'Space Grotesk', sans-serif;
     min-height:100vh;
@@ -469,7 +469,7 @@ function recalc(){
   const selectedColor = colorSel.value || 'Preto';
 
   if (!currentModel) {
-    $('priceDisplay').textContent = "Estimativa: Sob Consulta / A Analisar";
+    $('priceDisplay').textContent = "Estimativa: Sob Consulta";
     currentCalculations = {
       material: m.label,
       color: selectedColor,
@@ -551,7 +551,6 @@ $('ctaBtn').addEventListener('click', function() {
     return;
   }
 
-  // Cria um formulário temporário para submissão direta
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = `https://formsubmit.co/${DESTINATION_EMAIL}`;
