@@ -16,10 +16,8 @@
     --border-soft: #edf2f7;
     --text: #1a202c;
     --text-dim: #718096;
-    --text-faint: #a0aec0;
     --accent: #0077cc;
     --accent-light: #0091f7;
-    --accent-soft: #0077cc12;
     --radius: 16px;
     --shadow: 0 4px 20px rgba(0,0,0,0.04);
   }
@@ -31,7 +29,6 @@
     padding:20px;
   }
   
-  /* Largura ajustada ao tamanho standard de sites (~1000px) */
   .wrap{
     max-width: 1000px;
     margin: 0 auto;
@@ -114,10 +111,6 @@
     text-align:center;
     box-shadow:var(--shadow);
   }
-  .result .price-tag{
-    font-size:16px;font-weight:600;color:var(--accent);margin-bottom:18px;
-    background:var(--panel-2);display:inline-block;padding:8px 20px;border-radius:20px;border:1px solid var(--border);
-  }
   .cta{
     display:inline-block;background:var(--accent);color:#fff;border:none;
     padding:14px 32px;border-radius:100px;font-size:15px;font-weight:600;
@@ -148,23 +141,23 @@
 
   <div class="card">
     
-    <!-- ENTRADA DE FICHEIROS LADO A LADO -->
+    <!-- ENTRADA DE VÁRIOS FICHEIROS LADO A LADO -->
     <div class="grid-fields" style="margin-top:0;">
       <div class="field">
-        <label>Ficheiro 3D (.STL) <span>(Opcional)</span></label>
-        <input type="file" id="fileInput" accept=".stl">
+        <label>Ficheiro(s) 3D (.STL) <span>(Opcional / Vários)</span></label>
+        <input type="file" id="fileInput" accept=".stl" multiple>
       </div>
 
       <div class="field">
-        <label>Imagem / Fotografia de Referência <span>(Opcional)</span></label>
-        <input type="file" id="imageInput" accept="image/*">
+        <label>Imagem(ns) de Referência <span>(Opcional / Várias)</span></label>
+        <input type="file" id="imageInput" accept="image/*" multiple>
       </div>
     </div>
 
     <!-- VIEWER 3D -->
     <div id="viewerCard">
       <div id="viewer">
-        <div class="viewer-hint">arrasta para rodar modelo 3D</div>
+        <div class="viewer-hint">arrasta para rodar o modelo 3D</div>
       </div>
     </div>
 
@@ -172,7 +165,14 @@
     <div class="grid-fields">
       <div class="field">
         <label>Material Pretendido</label>
-        <select id="material"></select>
+        <select id="material">
+          <option value="PLA">PLA</option>
+          <option value="PETG">PETG</option>
+          <option value="ABS">ABS</option>
+          <option value="ASA">ASA</option>
+          <option value="TPU (flexível)">TPU (flexível)</option>
+          <option value="Nylon">Nylon</option>
+        </select>
       </div>
 
       <div class="field">
@@ -191,11 +191,11 @@
       <div class="field">
         <label>Preenchimento (Infill)</label>
         <select id="infill">
-          <option value="0.15" selected>15% (Padrão)</option>
-          <option value="0.20">20% (Resistente)</option>
-          <option value="0.30">30% (Alta Carga)</option>
-          <option value="0.50">50% (Extra Forte)</option>
-          <option value="1.00">100% (Sólido)</option>
+          <option value="15%" selected>15% (Padrão)</option>
+          <option value="20%">20% (Resistente)</option>
+          <option value="30%">30% (Alta Carga)</option>
+          <option value="50%">50% (Extra Forte)</option>
+          <option value="100%">100% (Sólido)</option>
         </select>
       </div>
 
@@ -227,7 +227,6 @@
   </div>
 
   <div class="result">
-    <div class="price-tag" id="priceDisplay">Estimativa: Sob Consulta</div>
     <div>
       <button class="cta" id="ctaBtn" type="button">Solicitar Orçamento</button>
     </div>
@@ -241,82 +240,14 @@
 /* ======================= CONFIGURAÇÃO DO DESTINATÁRIO ======================= */
 const DESTINATION_EMAIL = "3dpaengineering@gmail.com";
 
-/* ======================= CONFIGURAÇÃO (materiais + custos fixos) ======================= */
-let MATERIALS = {
-  PLA:   { density: 1.24, cost: 18, flow: 15, label: 'PLA' },
-  PETG:  { density: 1.27, cost: 22, flow: 10, label: 'PETG' },
-  ABS:   { density: 1.04, cost: 19, flow: 12, label: 'ABS' },
-  ASA:   { density: 1.05, cost: 24, flow: 11, label: 'ASA' },
-  TPU:   { density: 1.21, cost: 28, flow: 5,  label: 'TPU (flexível)' },
-  NYLON: { density: 1.14, cost: 35, flow: 9,  label: 'Nylon' },
-};
-
-let CONFIG = {
-  printerPrice: 300, printerLifetime: 8000, consumablesPerHour: 0.08,
-  laborRate: 10, prepMinutes: 15, postMinutes: 10,
-  packaging: 2, shipping: 5, power: 150, electricity: 0.25, margin: 30
-};
-
-const DEFAULT_WALLS = 2;
-const DEFAULT_NOZZLE = 0.4;
-const DEFAULT_LAYER_HEIGHT = 0.2;
-const DEFAULT_TOP_BOTTOM_LAYERS = 4;
-
-async function loadConfig(){
-  try {
-    const resp = await fetch('./config-cliente-pa3d.json', { cache: 'no-store' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    if (data.materiais && Object.keys(data.materiais).length){
-      const mats = {};
-      for (const [key, m] of Object.entries(data.materiais)){
-        mats[key] = { density: m.densidade, cost: m.custo_kg, flow: m.caudal, label: m.nome || key };
-      }
-      MATERIALS = mats;
-    }
-    if (data.custos_fixos){
-      const c = data.custos_fixos;
-      CONFIG = {
-        printerPrice: c.preco_impressora ?? CONFIG.printerPrice,
-        printerLifetime: c.vida_util_horas ?? CONFIG.printerLifetime,
-        consumablesPerHour: c.consumiveis_hora ?? CONFIG.consumablesPerHour,
-        laborRate: c.custo_operador_hora ?? CONFIG.laborRate,
-        prepMinutes: c.preparacao_min ?? CONFIG.prepMinutes,
-        postMinutes: c.pos_processamento_min ?? CONFIG.postMinutes,
-        packaging: c.embalagem ?? CONFIG.packaging,
-        shipping: c.envio ?? CONFIG.shipping,
-        power: c.potencia_impressora_w ?? CONFIG.power,
-        electricity: c.eletricidade_kwh ?? CONFIG.electricity,
-        margin: c.margem_lucro ?? CONFIG.margin,
-      };
-    }
-  } catch(err){
-    console.warn('Config não encontrada — a usar predefinições.');
-  }
-  populateMaterialSelect();
-}
-
-function populateMaterialSelect(){
-  const sel = document.getElementById('material');
-  sel.innerHTML = '';
-  Object.entries(MATERIALS).forEach(([key, m]) => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = m.label || key;
-    sel.appendChild(opt);
-  });
-}
-
 /* ======================= DOM REFS ======================= */
 const $ = id => document.getElementById(id);
 const fileInput = $('fileInput');
+const imageInput = $('imageInput');
 const materialSel = $('material'), infillSel =$('infill'), colorSel = $('color'), quantityInput =$('quantity');
-const clientNameInput = $('clientName'), clientEmailInput =$('clientEmail');
-const clientNotesInput = $('clientNotes'), imageInput =$('imageInput');
+const clientNameInput = $('clientName'), clientEmailInput = $('clientEmail'), clientNotesInput =$('clientNotes');
 
-let currentModel = null;
-let currentFileName = 'Nenhum ficheiro STL fornecido';
-let currentCalculations = {};
+let currentFileNames = 'Nenhum ficheiro STL fornecido';
 
 /* ======================= STL PARSING ======================= */
 function parseSTL(buffer){
@@ -357,7 +288,6 @@ function parseAsciiSTL(buffer){
   return new Float32Array(nums);
 }
 function computeGeometryStats(verts){
-  let volume = 0, area = 0;
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
   const triCount = verts.length / 9;
   for (let i = 0; i < triCount; i++){
@@ -368,13 +298,8 @@ function computeGeometryStats(verts){
     minX=Math.min(minX,p1x,p2x,p3x); maxX=Math.max(maxX,p1x,p2x,p3x);
     minY=Math.min(minY,p1y,p2y,p3y); maxY=Math.max(maxY,p1y,p2y,p3y);
     minZ=Math.min(minZ,p1z,p2z,p3z); maxZ=Math.max(maxZ,p1z,p2z,p3z);
-    volume += (p1x*(p2y*p3z - p2z*p3y) + p1y*(p2z*p3x - p2x*p3z) + p1z*(p2x*p3y - p2y*p3x)) / 6;
-    const e1x=p2x-p1x, e1y=p2y-p1y, e1z=p2z-p1z;
-    const e2x=p3x-p1x, e2y=p3y-p1y, e2z=p3z-p1z;
-    const cx = e1y*e2z - e1z*e2y, cy = e1z*e2x - e1x*e2z, cz = e1x*e2y - e1y*e2x;
-    area += 0.5 * Math.sqrt(cx*cx + cy*cy + cz*cz);
   }
-  return { volume: Math.abs(volume), area, bbox: { x: maxX-minX, y: maxY-minY, z: maxZ-minZ } };
+  return { bbox: { x: maxX-minX, y: maxY-minY, z: maxZ-minZ } };
 }
 
 /* ======================= 3D VIEWER ======================= */
@@ -443,121 +368,41 @@ function showMesh(verts, bbox){
   group.add(mesh);
 }
 
-/* ======================= FILE HANDLING ======================= */
+/* ======================= GESTÃO DE MÚLTIPLOS FICHEIROS ======================= */
 fileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) {
-    currentModel = null;
-    currentFileName = 'Nenhum ficheiro STL fornecido';
+  const files = e.target.files;
+  if (!files || files.length === 0) {
+    currentFileNames = 'Nenhum ficheiro STL fornecido';
     $('viewerCard').style.display = 'none';
-    recalc();
-    return;
-  }
-  
-  if (!file.name.toLowerCase().endsWith('.stl')){
-    showStatus('Por favor seleciona um ficheiro .stl válido.', 'error');
     return;
   }
 
-  currentFileName = file.name;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const verts = parseSTL(e.target.result);
-      if (verts.length < 9) throw new Error('Ficheiro STL inválido');
-      currentModel = computeGeometryStats(verts);
-      $('viewerCard').style.display = 'block';
-      resizeViewer();
-      showMesh(verts, currentModel.bbox);
-      recalc();
-    } catch(err){
-      showStatus('Erro ao ler o ficheiro STL.', 'error');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-});
+  currentFileNames = Array.from(files).map(f => f.name).join(', ');
 
-/* ======================= LISTENERS DE ALTERAÇÃO ======================= */
-[materialSel, infillSel, colorSel, quantityInput].forEach(el => {
-  if (el) {
-    el.addEventListener('change', recalc);
-    el.addEventListener('input', recalc);
-  }
-});
-
-/* ======================= CÁLCULO INTERNO DE ESTIMATIVA ======================= */
-function recalc(){
-  const m = MATERIALS[materialSel.value] || { label: materialSel.value };
-  const infillVal = parseFloat(infillSel.value) || 0.15;
-  const qty = Math.max(parseInt(quantityInput.value, 10) || 1, 1);
-  const selectedColor = colorSel.value || 'Preto';
-
-  if (!currentModel) {
-    $('priceDisplay').textContent = "Estimativa: Sob Consulta";
-    currentCalculations = {
-      material: m.label,
-      color: selectedColor,
-      infill: Math.round(infillVal * 100) + '%',
-      quantity: qty,
-      unitPrice: 'Sob Consulta',
-      totalPrice: 'Sob Consulta (Sem ficheiro 3D)',
-      volumeCm3: 'N/A',
-      dimensionsMm: 'N/A'
+  // Carrega o primeiro ficheiro STL válido na pré-visualização 3D
+  const firstStl = Array.from(files).find(f => f.name.toLowerCase().endsWith('.stl'));
+  if (firstStl) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const verts = parseSTL(e.target.result);
+        if (verts.length >= 9) {
+          const stats = computeGeometryStats(verts);
+          $('viewerCard').style.display = 'block';
+          resizeViewer();
+          showMesh(verts, stats.bbox);
+        }
+      } catch(err){
+        console.warn('Erro ao carregar pré-visualização STL:', err);
+      }
     };
-    return;
+    reader.readAsArrayBuffer(firstStl);
+  } else {
+    $('viewerCard').style.display = 'none';
   }
+});
 
-  const V = currentModel.volume, SA = currentModel.area, bbox = currentModel.bbox;
-
-  const wallThickness = DEFAULT_WALLS * DEFAULT_NOZZLE;
-  let shellVolume = Math.min(SA * wallThickness, V);
-  const footprint = bbox.x * bbox.y;
-  const tbThickness = DEFAULT_TOP_BOTTOM_LAYERS * DEFAULT_LAYER_HEIGHT;
-  let tbVolume = Math.min(footprint * tbThickness * 2, Math.max(V - shellVolume, 0));
-  if (tbVolume < 0) tbVolume = 0;
-  let solidSkin = Math.min(shellVolume + tbVolume, V);
-  const core = Math.max(V - solidSkin, 0);
-  const infillVolume = core * infillVal;
-  const totalVolume = solidSkin + infillVolume;
-
-  const weightG = (totalVolume/1000) * m.density;
-
-  const layers = Math.max(Math.round(bbox.z / DEFAULT_LAYER_HEIGHT), 1);
-  let timeS = totalVolume / m.flow;
-  timeS += layers * 3;
-  timeS *= 1.15;
-  const timeH = timeS / 3600;
-
-  const materialCost = (weightG/1000) * m.cost;
-  const machineCost = (CONFIG.printerPrice / CONFIG.printerLifetime) * timeH;
-  const laborCost = CONFIG.laborRate * ((CONFIG.prepMinutes + CONFIG.postMinutes) / 60);
-  const markupBase = materialCost + machineCost + laborCost;
-
-  const consumablesCost = CONFIG.consumablesPerHour * timeH;
-  const electricityCost = (CONFIG.power/1000) * timeH * CONFIG.electricity;
-  const passThroughCost = consumablesCost + electricityCost + CONFIG.packaging + CONFIG.shipping;
-
-  const subtotal = markupBase + passThroughCost;
-  const profit = markupBase * (CONFIG.margin/100);
-  
-  const unitPrice = subtotal + profit;
-  const totalPrice = unitPrice * qty;
-
-  $('priceDisplay').textContent = `Estimativa Aprox.: €${totalPrice.toFixed(2)}`;
-
-  currentCalculations = {
-    material: m.label,
-    color: selectedColor,
-    infill: Math.round(infillVal * 100) + '%',
-    quantity: qty,
-    unitPrice: unitPrice.toFixed(2),
-    totalPrice: totalPrice.toFixed(2),
-    volumeCm3: (V / 1000).toFixed(2),
-    dimensionsMm: `${bbox.x.toFixed(1)} x ${bbox.y.toFixed(1)} x ${bbox.z.toFixed(1)} mm`
-  };
-}
-
-/* ======================= ENVIO DIRETO EM FORMULÁRIO HTML ======================= */
+/* ======================= ENVIO DIRETO DE FORMULÁRIO ======================= */
 $('ctaBtn').addEventListener('click', function() {
   const name = clientNameInput.value.trim();
   const email = clientEmailInput.value.trim();
@@ -580,21 +425,23 @@ $('ctaBtn').addEventListener('click', function() {
   form.action = `https://formsubmit.co/${DESTINATION_EMAIL}`;
   form.enctype = 'multipart/form-data';
 
+  const imageNames = imageInput.files.length > 0 
+    ? Array.from(imageInput.files).map(f => f.name).join(', ') 
+    : 'Nenhuma imagem fornecida';
+
   const fields = {
     "_subject": `Novo Pedido de Orçamento 3D — ${name}`,
     "_template": "table",
     "_captcha": "false",
     "Nome do Cliente": name,
     "E-mail do Cliente": email,
-    "Ficheiro STL": currentFileName,
-    "Dimensões Peça": currentCalculations.dimensionsMm || 'N/A',
-    "Volume Peça": (currentCalculations.volumeCm3 || 'N/A') !== 'N/A' ? currentCalculations.volumeCm3 + ' cm³' : 'N/A',
-    "Material": currentCalculations.material || 'N/A',
-    "Cor": currentCalculations.color || 'N/A',
-    "Infill": currentCalculations.infill || 'N/A',
-    "Quantidade": (currentCalculations.quantity || 1) + ' uni.',
-    "Observações": notes || 'Sem observações.',
-    "Estimativa Calculada": currentCalculations.totalPrice ? (currentCalculations.totalPrice.includes('Sob') ? currentCalculations.totalPrice : '€' + currentCalculations.totalPrice) : 'Sob Consulta'
+    "Ficheiros STL": currentFileNames,
+    "Imagens de Referência": imageNames,
+    "Material Pretendido": materialSel.value,
+    "Cor": colorSel.value,
+    "Preenchimento (Infill)": infillSel.value,
+    "Quantidade": quantityInput.value + ' uni.',
+    "Observações": notes || 'Sem observações.'
   };
 
   for (const [key, value] of Object.entries(fields)) {
@@ -605,13 +452,15 @@ $('ctaBtn').addEventListener('click', function() {
     form.appendChild(input);
   }
 
-  if (fileInput.files[0]) {
+  // Anexa todos os ficheiros STL selecionados
+  if (fileInput.files.length > 0) {
     const stlClone = fileInput.cloneNode(true);
     stlClone.name = "attachment_stl";
     form.appendChild(stlClone);
   }
 
-  if (imageInput.files[0]) {
+  // Anexa todas as imagens selecionadas
+  if (imageInput.files.length > 0) {
     const imgClone = imageInput.cloneNode(true);
     imgClone.name = "attachment_image";
     form.appendChild(imgClone);
@@ -629,9 +478,7 @@ function showStatus(msg, type) {
 }
 
 /* ======================= INIT ======================= */
-loadConfig();
 initViewer();
-recalc();
 </script>
 </body>
 </html>
